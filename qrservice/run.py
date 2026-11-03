@@ -144,6 +144,12 @@ def serve(directory: Path, port: int) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Логи должны читаться одинаково в консоли Windows, в файле и в Actions.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:                          # noqa: BLE001
+        pass
     ap = argparse.ArgumentParser(description="Проверка серверов и генерация страницы с QR-кодами")
     ap.add_argument("--config", default=str(ROOT / "config.json"))
     ap.add_argument("--out", default=str(ROOT / "dist"))

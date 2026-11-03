@@ -31,12 +31,53 @@
 `state.json` хранит историю: карточка с зелёной плашкой «96 % аптайм» работала почти в
 каждой из последних проверок, «новый» — встретилась впервые.
 
-## Быстрый старт на GitHub (бесплатно, без карты)
+## Уже развёрнуто: `Mi11enium/access`
+
+| Что | Значение |
+|---|---|
+| Страница | https://mi11enium.github.io/access/k4r8m2xq9t7e/ |
+| Подписка для клиента | https://mi11enium.github.io/access/k4r8m2xq9t7e/sub.txt |
+| Код | ветка `main` (по умолчанию), сайт — ветка `gh-pages` |
+| Секрет | `SITE_SLUG=k4r8m2xq9t7e` уже добавлен в Settings → Secrets |
+| Обновление | задача Планировщика Windows **«proxy-qr refresh»**, каждые 20 минут |
+
+Проверено по факту: 294 ноды → 68 живых → 40 на странице, публикация в `gh-pages`,
+живая страница отдаёт 40 карточек, 40 QR-SVG (`image/svg+xml`) и `state.json` с историей.
+
+### Обновление без GitHub Actions (уже работает)
+
+`refresh_hidden.vbs` запускает `refresh.bat` без окна консоли; значения (токен, адреса,
+путь к `xray.exe`) берутся из `.env.local` в корне проекта — он в `.gitignore`.
+Пересоздать задачу:
+
+```cmd
+schtasks /Create /TN "proxy-qr refresh" /SC MINUTE /MO 20 ^
+  /TR "wscript.exe \"D:\Software\proxy-qr\refresh_hidden.vbs\"" /F
+```
+
+Плюс этого пути: ноды проверяются **с российского IP**, то есть ровно так, как их увидит
+телефон. Минус: пока ПК выключен, страница показывает последние результаты (в шапке
+видно «обновлено N ч назад»).
+
+### Если нужен облачный крон (работает при выключенном ПК)
+
+Файл workflow лежит в `ci/refresh.workflow.yml`, но залить его автоматически не дал
+токен: у OAuth-токена нет scope `workflow` (GitHub отказывает в записи
+`.github/workflows/*`). Добавляется один раз вручную, 30 секунд:
+
+1. В репозитории: **Add file → Create new file**, имя `.github/workflows/refresh.yml`.
+2. Скопировать туда содержимое `ci/refresh.workflow.yml`, **Commit**.
+3. **Actions → refresh → Run workflow**.
+
+После этого проверка и публикация идут с GitHub каждые 20 минут независимо от ПК.
+Секрет `SITE_SLUG` и права Actions (`Read and write`) уже настроены.
+
+## Быстрый старт с нуля (другой аккаунт)
 
 1. Создайте **публичный** репозиторий (Actions и Pages для публичных репозиториев
    бесплатны; приватность даёт неугадываемый `slug`, а не приватность репозитория).
 2. Загрузите в него эти файлы (`qrservice/`, `config.json`, `requirements.txt`,
-   `.github/workflows/refresh.yml`).
+   `ci/refresh.workflow.yml` → `.github/workflows/refresh.yml`).
 3. **Settings → Actions → General → Workflow permissions** → `Read and write permissions`.
 4. **Settings → Secrets and variables → Actions → New repository secret**:
    `SITE_SLUG` = любая случайная строка, например `k7f2m9x4q1` — это адрес страницы.
