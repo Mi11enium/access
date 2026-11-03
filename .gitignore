@@ -7,3 +7,5 @@ bin/xray.exe
 __pycache__/
 *.pyc
 .env
+logs/
+.env.local

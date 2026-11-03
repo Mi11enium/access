@@ -1,0 +1,50 @@
+name: refresh
+
+# Бесплатный «сервер»: GitHub Actions. Публичные репозитории не расходуют минуты,
+# поэтому запускать проверку каждые 20 минут ничего не стоит.
+on:
+  schedule:
+    - cron: "*/20 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Зависимости
+        run: pip install -r requirements.txt
+
+      - name: Ядро Xray
+        run: |
+          curl -sSL -o xray.zip https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
+          mkdir -p bin
+          unzip -qo xray.zip -d bin
+          chmod +x bin/xray
+          ./bin/xray version | head -2
+
+      - name: Проверка серверов и сборка страницы
+        env:
+          SITE_SLUG: ${{ secrets.SITE_SLUG }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISH: "1"
+        run: |
+          REPO="${{ github.repository }}"
+          OWNER_L=$(echo "${REPO%%/*}" | tr 'A-Z' 'a-z')
+          REPO_L=$(echo "${REPO##*/}" | tr 'A-Z' 'a-z')
+          export PUBLISH_REPO="$REPO"
+          export PAGES_URL="https://${OWNER_L}.github.io/${REPO_L}"
+          python -m qrservice.run --config config.json --out dist --publish

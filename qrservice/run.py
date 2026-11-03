@@ -28,6 +28,29 @@ def load_cfg(path: Path) -> dict:
     return cfg
 
 
+def _load_dotenv() -> None:
+    """Читает .env.local / .env из корня проекта (если есть).
+
+    Нужно для локального запуска по расписанию: токен и адреса лежат в файле,
+    который не попадает в репозиторий, а не в командной строке.
+    """
+    for name in (".env.local", ".env"):
+        path = ROOT / name
+        if not path.exists():
+            continue
+        for line in path.read_text("utf-8", errors="ignore").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            if line.startswith("export "):
+                line = line[7:]
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+
 def env_overrides(cfg: dict) -> dict:
     """Секреты и адреса удобнее держать в окружении, а не в публичном конфиге."""
     site_cfg = cfg.setdefault("site", {})
@@ -130,6 +153,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-speed", action="store_true", help="без замера скорости")
     args = ap.parse_args(argv)
 
+    _load_dotenv()
     cfg = env_overrides(load_cfg(Path(args.config)))
     out_root = Path(args.out)
     site_cfg = cfg.get("site", {}) or {}

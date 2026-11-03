@@ -1,11 +1,6 @@
 @echo off
-rem Локальный запуск сервиса на Windows: проверка нод + сборка страницы.
-rem Для публикации добавьте --publish и переменные GITHUB_TOKEN / PUBLISH_REPO.
+rem Локальное обновление: проверка серверов + публикация на GitHub Pages.
+rem Все значения (токен, адреса, путь к xray) берутся из .env.local рядом.
 cd /d "%~dp0"
-
-set "XRAY_BIN=D:\Software\v2rayN\v2rayN-windows-64\bin\xray\xray.exe"
-set "SITE_SLUG=demo"
-set "PAGES_URL=http://192.168.1.10:8099"
-
-rem убрать перед запуском, если venv создавался через uv: pip не нужен
-.venv\Scripts\python.exe -m qrservice.run --config config.json --out dist %*
+if not exist logs mkdir logs
+.venv\Scripts\python.exe -m qrservice.run --config config.json --out dist %* >> logs\local_refresh.log 2>&1
