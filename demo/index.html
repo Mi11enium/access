@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0a0e13">
+<title>Рабочие серверы</title>
+<style>
+:root{--bg:#0a0e13;--card:#151c25;--card2:#1b2531;--txt:#e8eef6;--mut:#8b9bb0;
+--acc:#4fa3ff;--ok:#3ddc84;--warn:#ffb020;--bad:#ff5f6d;--line:#243040}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--txt)}
+body{font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+padding-bottom:34px;-webkit-text-size-adjust:100%}
+header{position:sticky;top:0;z-index:10;padding:13px 16px 10px;background:rgba(10,14,19,.94);
+border-bottom:1px solid var(--line);backdrop-filter:blur(10px)}
+h1{margin:0 0 3px;font-size:17px;font-weight:650;letter-spacing:.2px}
+.stat{font-size:12.5px;color:var(--mut)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;
+vertical-align:1px;background:var(--ok)}
+.dot.warn{background:var(--warn)}
+.dot.bad{background:var(--bad)}
+main{max-width:720px;margin:0 auto;padding:12px 12px 0}
+.hint{background:var(--card);border:1px solid var(--line);border-radius:14px;
+padding:11px 13px;font-size:13.5px;color:var(--mut);margin-bottom:10px}
+.hint b{color:var(--txt);font-weight:600}
+.warnbox{border-color:#5a3a08;background:#241a08;color:#ffd79a;font-size:13.5px;
+border-radius:14px;padding:11px 13px;margin-bottom:10px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;padding:9px 14px;border-radius:999px;background:var(--card);
+border:1px solid var(--line);color:var(--mut);font-size:13.5px;font-weight:600;
+cursor:pointer;font-family:inherit}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#04121f}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;
+padding:13px 14px;margin-bottom:10px}
+.top{display:flex;align-items:flex-start;gap:10px;justify-content:space-between}
+.nm{font-weight:640;font-size:15px;line-height:1.28;word-break:break-word}
+.ping{font-variant-numeric:tabular-nums;font-size:13px;font-weight:700;white-space:nowrap;
+padding-top:1px}
+.p-fast{color:var(--ok)}.p-mid{color:var(--warn)}.p-slow{color:var(--bad)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:9px 0 11px}
+.tag{font-size:11px;padding:3px 8px;border-radius:6px;background:var(--card2);color:var(--mut)}
+.tag.good{color:#8ff0b5;background:#12291c}
+.tag.stale{color:#ffd79a;background:#2a1f08}
+.acts{display:flex;gap:8px}
+.btn{flex:1;min-height:44px;border-radius:12px;border:1px solid var(--line);
+background:var(--card2);color:var(--txt);font:600 14.5px/1 inherit;display:flex;
+align-items:center;justify-content:center;gap:6px;text-decoration:none;cursor:pointer;
+padding:0 10px}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:#04121f}
+.btn:active{transform:scale(.985)}
+.btn[disabled]{opacity:.75}
+.subblock{background:var(--card);border:1px solid var(--line);border-radius:16px;
+padding:14px;margin:14px 0 8px}
+.subblock h2{font-size:14.5px;margin:0 0 6px;font-weight:640}
+.subblock p{margin:0 0 10px;font-size:13px;color:var(--mut)}
+.subrow{display:flex;gap:10px;align-items:center}
+.subrow img{width:96px;height:96px;background:#fff;border-radius:10px;padding:4px;flex:0 0 auto}
+.url{font:12px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--acc);
+word-break:break-all;margin-bottom:8px}
+footer{max-width:720px;margin:16px auto 0;padding:0 14px;font-size:12px;color:var(--mut);
+text-align:center;line-height:1.6}
+.ovl{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
+padding:18px;background:rgba(4,7,10,.92);backdrop-filter:blur(4px)}
+.ovl.show{display:flex}
+.ovl-box{width:100%;max-width:370px;background:#0f151d;border:1px solid var(--line);
+border-radius:20px;padding:14px 14px 16px}
+.ovl-head{display:flex;align-items:flex-start;gap:10px;justify-content:space-between;
+margin-bottom:10px}
+.ovl-title{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);
+margin-bottom:3px}
+.ovl-head .nm{font-size:14px}
+#ovl-x{flex:0 0 auto;width:32px;height:32px;border-radius:50%;background:var(--card2);
+border:0;color:var(--txt);font-size:18px;line-height:1;cursor:pointer}
+.qrwrap{background:#fff;border-radius:14px;padding:10px;margin-bottom:9px}
+#ovl-qr{display:block;width:100%;height:auto}
+.ovl-tip{font-size:12px;color:var(--mut);text-align:center;margin-bottom:9px;line-height:1.4}
+.ovl-lnk{font:11.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:#a8bacd;
+max-height:40px;overflow:hidden;word-break:break-all;margin-bottom:10px;cursor:pointer;
+border:1px dashed var(--line);border-radius:10px;padding:7px 9px}
+.ovl-lnk.open{max-height:132px;overflow:auto}
+.urlhint{font-size:11.5px;color:var(--acc);margin:-4px 0 10px 2px;cursor:pointer}
+.none{display:none;color:var(--mut);font-size:14px;text-align:center;padding:26px 0}
+@media (prefers-color-scheme:light){
+ :root{--bg:#f5f7fa;--card:#fff;--card2:#eef2f8;--txt:#0e1520;--mut:#5c6b7f;--line:#dde4ee;--acc:#1a6fd4}
+ header{background:rgba(245,247,250,.95)}
+ .tag.good{color:#0a6b34;background:#e2f7ea}
+ .tag.stale{color:#7a4a00;background:#fff2d8}
+ .warnbox{border-color:#f0c67a;background:#fff8e8;color:#6b4400}
+ .ovl-box{background:#fff}
+ .ovl-lnk{color:#5c6b7f}
+}
+</style>
+</head><body>
+<header>
+  <h1>Рабочие серверы</h1>
+  <div class="stat"><span class="dot ok"></span>40 рабочих серверов · обновлено <span data-ts="1793714830">недавно</span></div>
+  <div class="stat" style="margin-top:2px">Проверено локально (Windows 11)</div>
+</header>
+<main>
+
+<div class="hint">
+  <b>Как подключиться:</b> установите клиент (v2rayNG, Hiddify, Streisand, Shadowrocket) →
+  нажмите <b>QR-код</b> у сервера и отсканируйте его камерой телефона, либо нажмите
+  <b>Копировать</b> и вставьте ссылку в клиенте через «Импорт из буфера обмена».
+</div>
+<div class="chips">
+  <button class="chip on" data-filter="all">Все (40)</button>
+  <button class="chip" data-filter="stable">Стабильные</button>
+  <button class="chip" data-filter="vless">VLESS (39)</button><button class="chip" data-filter="vmess">VMESS (1)</button>
+</div>
+<div id="list"><article class="card" data-kind="vless" data-up="1.00" data-id="eceb690b60c1e8c2">
+  <div class="top">
+    <div class="nm">🇳🇱</div>
+    <div class="ping p-mid">219 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="eceb690b60c1e8c2" data-name="🇳🇱" data-link="vless://95d0e214-eab0-4701-93ed-fea4f1b56062@50.7.193.131:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=oAX7soFKfN3xURgCD26trmjeF-e-eEjW3pBVXuuvW0k&amp;security=reality&amp;sid=77a8c8c8&amp;sni=prime.jarbook.net&amp;type=tcp#🇳🇱">QR-код</button>
+    <button class="btn" data-copy="vless://95d0e214-eab0-4701-93ed-fea4f1b56062@50.7.193.131:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=oAX7soFKfN3xURgCD26trmjeF-e-eEjW3pBVXuuvW0k&amp;security=reality&amp;sid=77a8c8c8&amp;sni=prime.jarbook.net&amp;type=tcp#🇳🇱">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="86ff63f62ad609f3">
+  <div class="top">
+    <div class="nm">🇳🇱</div>
+    <div class="ping p-mid">262 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="86ff63f62ad609f3" data-name="🇳🇱" data-link="vless://95d0e214-eab0-4701-93ed-fea4f1b56062@50.7.95.196:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=gJoMHh97teLxW92Z_3DI8qdSulqBlb9sW6mthYPEEBk&amp;security=reality&amp;sid=d889ac17&amp;sni=main.jarbook.net&amp;type=tcp#🇳🇱">QR-код</button>
+    <button class="btn" data-copy="vless://95d0e214-eab0-4701-93ed-fea4f1b56062@50.7.95.196:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=gJoMHh97teLxW92Z_3DI8qdSulqBlb9sW6mthYPEEBk&amp;security=reality&amp;sid=d889ac17&amp;sni=main.jarbook.net&amp;type=tcp#🇳🇱">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="d82aef59e329063c">
+  <div class="top">
+    <div class="nm">🇱🇹</div>
+    <div class="ping p-mid">265 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="d82aef59e329063c" data-name="🇱🇹" data-link="vless://fb37d713-0ed3-4146-b085-a5c879a9aafa@93.115.24.135:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=zZjrHRzULoXKVccVdPqtrtXLEUPJXwqdE1138vu5x3w&amp;security=reality&amp;sid=3e137406&amp;sni=admin.betust.net&amp;type=tcp#🇱🇹">QR-код</button>
+    <button class="btn" data-copy="vless://fb37d713-0ed3-4146-b085-a5c879a9aafa@93.115.24.135:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=zZjrHRzULoXKVccVdPqtrtXLEUPJXwqdE1138vu5x3w&amp;security=reality&amp;sid=3e137406&amp;sni=admin.betust.net&amp;type=tcp#🇱🇹">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="05850e8f31e1faa8">
+  <div class="top">
+    <div class="nm">Бесплатный</div>
+    <div class="ping p-mid">274 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="05850e8f31e1faa8" data-name="Бесплатный" data-link="vless://3bb97d46-789b-4229-88f6-9beb222a4137@147.45.148.6:443/?type=tcp&amp;encryption=none&amp;flow=xtls-rprx-vision&amp;sni=yoy-api.bachidze.com&amp;fp=firefox&amp;security=reality&amp;pbk=ZJlfiMh4ebjrTl2_kwAk_zXMAaCiwNS7yMd5XzlUgmI&amp;sid=#Бесплатный">QR-код</button>
+    <button class="btn" data-copy="vless://3bb97d46-789b-4229-88f6-9beb222a4137@147.45.148.6:443/?type=tcp&amp;encryption=none&amp;flow=xtls-rprx-vision&amp;sni=yoy-api.bachidze.com&amp;fp=firefox&amp;security=reality&amp;pbk=ZJlfiMh4ebjrTl2_kwAk_zXMAaCiwNS7yMd5XzlUgmI&amp;sid=#Бесплатный">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="45001dc9e8c46e27">
+  <div class="top">
+    <div class="nm">🇳🇱</div>
+    <div class="ping p-mid">314 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="45001dc9e8c46e27" data-name="🇳🇱" data-link="vless://5c32201a-6c0e-451b-8f0a-24b4bd40df59@45.141.202.69:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=kBTMVLCNE0jjwuJF6H5-65l5Pe0QToS0Hg-9Tmaa7Sk&amp;security=reality&amp;sid=1a2b3c4d&amp;sni=files.porsche.com&amp;type=tcp#🇳🇱">QR-код</button>
+    <button class="btn" data-copy="vless://5c32201a-6c0e-451b-8f0a-24b4bd40df59@45.141.202.69:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=kBTMVLCNE0jjwuJF6H5-65l5Pe0QToS0Hg-9Tmaa7Sk&amp;security=reality&amp;sid=1a2b3c4d&amp;sni=files.porsche.com&amp;type=tcp#🇳🇱">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="c2ac19ef7883dc09">
+  <div class="top">
+    <div class="nm">🇱🇹</div>
+    <div class="ping p-mid">315 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="c2ac19ef7883dc09" data-name="🇱🇹" data-link="vless://95d0e214-eab0-4701-93ed-fea4f1b56062@93.115.24.135:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=zZjrHRzULoXKVccVdPqtrtXLEUPJXwqdE1138vu5x3w&amp;security=reality&amp;sid=3e137406&amp;sni=admin.betust.net&amp;type=tcp#🇱🇹">QR-код</button>
+    <button class="btn" data-copy="vless://95d0e214-eab0-4701-93ed-fea4f1b56062@93.115.24.135:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=zZjrHRzULoXKVccVdPqtrtXLEUPJXwqdE1138vu5x3w&amp;security=reality&amp;sid=3e137406&amp;sni=admin.betust.net&amp;type=tcp#🇱🇹">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="acb8358ada7d648c">
+  <div class="top">
+    <div class="nm">AetrisVPN</div>
+    <div class="ping p-mid">323 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="acb8358ada7d648c" data-name="AetrisVPN" data-link="vless://50a87e21-f0e2-4b53-a787-91adfe748f63@sundaylanzgem.site:443?encryption=none&amp;flow=xtls-rprx-vision&amp;type=tcp&amp;security=reality&amp;sni=sundaylanzgem.site&amp;pbk=-BN9yCN0ECqxOPoJOan1-CIMEYc5e7wdJwaeDxsUM20&amp;fp=qq#AetrisVPN">QR-код</button>
+    <button class="btn" data-copy="vless://50a87e21-f0e2-4b53-a787-91adfe748f63@sundaylanzgem.site:443?encryption=none&amp;flow=xtls-rprx-vision&amp;type=tcp&amp;security=reality&amp;sni=sundaylanzgem.site&amp;pbk=-BN9yCN0ECqxOPoJOan1-CIMEYc5e7wdJwaeDxsUM20&amp;fp=qq#AetrisVPN">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="332e5c7e77e843d0">
+  <div class="top">
+    <div class="nm">Бесплатный</div>
+    <div class="ping p-mid">324 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag">xhttp</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="332e5c7e77e843d0" data-name="Бесплатный" data-link="vless://6da2c981-8c77-4340-bda3-93399b7aea26@178.17.52.236:2083?mode=auto&amp;path=%2Fv2%2Fsync%2F6e9367&amp;security=reality&amp;encryption=none&amp;pbk=mbi4BZAuiq_L6pfhG2xxWmtosq0Z1Pzf18fvNSWKMxY&amp;fp=firefox&amp;type=xhttp&amp;sni=maps.blog-forme.ru&amp;sid=3258252d44113e23#Бесплатный">QR-код</button>
+    <button class="btn" data-copy="vless://6da2c981-8c77-4340-bda3-93399b7aea26@178.17.52.236:2083?mode=auto&amp;path=%2Fv2%2Fsync%2F6e9367&amp;security=reality&amp;encryption=none&amp;pbk=mbi4BZAuiq_L6pfhG2xxWmtosq0Z1Pzf18fvNSWKMxY&amp;fp=firefox&amp;type=xhttp&amp;sni=maps.blog-forme.ru&amp;sid=3258252d44113e23#Бесплатный">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="927377575f992b8d">
+  <div class="top">
+    <div class="nm">🇵🇱</div>
+    <div class="ping p-mid">324 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="927377575f992b8d" data-name="🇵🇱" data-link="vless://3bb97d46-789b-4229-88f6-9beb222a4137@144.31.4.234:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=E12wXXagR8xuql7KlWCLTgMaXj74JcU__lg66yz6iTw&amp;security=reality&amp;sni=direct-nl.bachidze.com&amp;type=tcp#🇵🇱">QR-код</button>
+    <button class="btn" data-copy="vless://3bb97d46-789b-4229-88f6-9beb222a4137@144.31.4.234:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=E12wXXagR8xuql7KlWCLTgMaXj74JcU__lg66yz6iTw&amp;security=reality&amp;sni=direct-nl.bachidze.com&amp;type=tcp#🇵🇱">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="9fd6c66ab67daa8a">
+  <div class="top">
+    <div class="nm">🇷🇺</div>
+    <div class="ping p-mid">332 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="9fd6c66ab67daa8a" data-name="🇷🇺" data-link="vless://b5d044c5-1e70-49bb-a650-08b1de516691@13.143.184.226:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=qPh1iuwpELosLWTxOXyfCiMghs_sjSzCOGbkiF0gdkk&amp;security=reality&amp;sid=f7e66e308136e1a1&amp;sni=msc1.serverslocal.ru&amp;type=tcp#🇷🇺">QR-код</button>
+    <button class="btn" data-copy="vless://b5d044c5-1e70-49bb-a650-08b1de516691@13.143.184.226:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=qPh1iuwpELosLWTxOXyfCiMghs_sjSzCOGbkiF0gdkk&amp;security=reality&amp;sid=f7e66e308136e1a1&amp;sni=msc1.serverslocal.ru&amp;type=tcp#🇷🇺">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="bd098fe0a7adc20a">
+  <div class="top">
+    <div class="nm">🇳🇱</div>
+    <div class="ping p-mid">333 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="bd098fe0a7adc20a" data-name="🇳🇱" data-link="vless://fb37d713-0ed3-4146-b085-a5c879a9aafa@50.7.95.196:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=gJoMHh97teLxW92Z_3DI8qdSulqBlb9sW6mthYPEEBk&amp;security=reality&amp;sid=d889ac17&amp;sni=main.jarbook.net&amp;type=tcp#🇳🇱">QR-код</button>
+    <button class="btn" data-copy="vless://fb37d713-0ed3-4146-b085-a5c879a9aafa@50.7.95.196:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=gJoMHh97teLxW92Z_3DI8qdSulqBlb9sW6mthYPEEBk&amp;security=reality&amp;sid=d889ac17&amp;sni=main.jarbook.net&amp;type=tcp#🇳🇱">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="dc60f9cc8eca1e68">
+  <div class="top">
+    <div class="nm">🇳🇱</div>
+    <div class="ping p-mid">343 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag">xhttp</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="dc60f9cc8eca1e68" data-name="🇳🇱" data-link="vless://6da2c981-8c77-4340-bda3-93399b7aea26@91.84.115.36:443?encryption=none&amp;extra={&quot;xmux&quot;:{&quot;maxConcurrency&quot;:&quot;16-32&quot;,&quot;cMaxReuseTimes&quot;:0,&quot;hMaxRequestTimes&quot;:&quot;1800-3000&quot;,&quot;hMaxReusableSecs&quot;:&quot;10800-14400&quot;,&quot;hKeepAlivePeriod&quot;:0}}&amp;fp=firefox&amp;path=/v2/sync/af2c0c&amp;pbk=nalACuCZjV1sZx7QOH6yAIDio8mFI0FgVKYQvQHBKS4&amp;security=reality&amp;sid=fb3a5f2d4ca346ed&amp;sni=shorts.blog-forme.ru&amp;type=xhttp#🇳🇱">QR-код</button>
+    <button class="btn" data-copy="vless://6da2c981-8c77-4340-bda3-93399b7aea26@91.84.115.36:443?encryption=none&amp;extra={&quot;xmux&quot;:{&quot;maxConcurrency&quot;:&quot;16-32&quot;,&quot;cMaxReuseTimes&quot;:0,&quot;hMaxRequestTimes&quot;:&quot;1800-3000&quot;,&quot;hMaxReusableSecs&quot;:&quot;10800-14400&quot;,&quot;hKeepAlivePeriod&quot;:0}}&amp;fp=firefox&amp;path=/v2/sync/af2c0c&amp;pbk=nalACuCZjV1sZx7QOH6yAIDio8mFI0FgVKYQvQHBKS4&amp;security=reality&amp;sid=fb3a5f2d4ca346ed&amp;sni=shorts.blog-forme.ru&amp;type=xhttp#🇳🇱">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="69debb1f55224599">
+  <div class="top">
+    <div class="nm">🇩🇪</div>
+    <div class="ping p-mid">347 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="69debb1f55224599" data-name="🇩🇪" data-link="vless://50a87e21-f0e2-4b53-a787-91adfe748f63@177.202.66.159:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=-BN9yCN0ECqxOPoJOan1-CIMEYc5e7wdJwaeDxsUM20&amp;security=reality&amp;sni=sundaylanzgem.site&amp;type=tcp#🇩🇪">QR-код</button>
+    <button class="btn" data-copy="vless://50a87e21-f0e2-4b53-a787-91adfe748f63@177.202.66.159:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=-BN9yCN0ECqxOPoJOan1-CIMEYc5e7wdJwaeDxsUM20&amp;security=reality&amp;sni=sundaylanzgem.site&amp;type=tcp#🇩🇪">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="f05fc5a98a7b68d7">
+  <div class="top">
+    <div class="nm">[376ms</div>
+    <div class="ping p-mid">348 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="f05fc5a98a7b68d7" data-name="[376ms" data-link="vless://3bb97d46-789b-4229-88f6-9beb222a4137@yoy-api.bachidze.com:443?encryption=none&amp;flow=xtls-rprx-vision&amp;pbk=ZJlfiMh4ebjrTl2_kwAk_zXMAaCiwNS7yMd5XzlUgmI&amp;security=reality&amp;sni=yoy-api.bachidze.com&amp;type=tcp&amp;fp=ios#[376ms">QR-код</button>
+    <button class="btn" data-copy="vless://3bb97d46-789b-4229-88f6-9beb222a4137@yoy-api.bachidze.com:443?encryption=none&amp;flow=xtls-rprx-vision&amp;pbk=ZJlfiMh4ebjrTl2_kwAk_zXMAaCiwNS7yMd5XzlUgmI&amp;security=reality&amp;sni=yoy-api.bachidze.com&amp;type=tcp&amp;fp=ios#[376ms">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="5790637a9fe9de02">
+  <div class="top">
+    <div class="nm">🇺🇸 AetrisVPN t.me/rjsxrd</div>
+    <div class="ping p-mid">349 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">TLS</span><span class="tag">xhttp</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="5790637a9fe9de02" data-name="🇺🇸 AetrisVPN t.me/rjsxrd" data-link="vless://88281d02-b387-4fe3-918e-26ed331e6d08@81.17.154.97:443?security=tls&amp;sni=is-tw-relay.cdn.cachefleet.com&amp;alpn=h2&amp;fp=firefox&amp;type=xhttp&amp;path=%2Fccxf5snr06b8xxb6&amp;host=is-tw-relay.cdn.cachefleet.com&amp;mode=auto#%F0%9F%87%BA%F0%9F%87%B8%20AetrisVPN%20t.me%2Frjsxrd">QR-код</button>
+    <button class="btn" data-copy="vless://88281d02-b387-4fe3-918e-26ed331e6d08@81.17.154.97:443?security=tls&amp;sni=is-tw-relay.cdn.cachefleet.com&amp;alpn=h2&amp;fp=firefox&amp;type=xhttp&amp;path=%2Fccxf5snr06b8xxb6&amp;host=is-tw-relay.cdn.cachefleet.com&amp;mode=auto#%F0%9F%87%BA%F0%9F%87%B8%20AetrisVPN%20t.me%2Frjsxrd">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="4ba42c53a500b57f">
+  <div class="top">
+    <div class="nm">🇺🇸 AetrisVPN t.me/rjsxrd</div>
+    <div class="ping p-mid">350 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">TLS</span><span class="tag">xhttp</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="4ba42c53a500b57f" data-name="🇺🇸 AetrisVPN t.me/rjsxrd" data-link="vless://88281d02-b387-4fe3-918e-26ed331e6d08@95.129.234.113:8443?security=tls&amp;sni=tansy-wharf.cdn.cachefleet.com&amp;alpn=h2&amp;fp=firefox&amp;type=xhttp&amp;path=%2Fccxf5snr06b8xxb6&amp;host=is-tw-relay.cdn.cachefleet.com&amp;mode=auto#%F0%9F%87%BA%F0%9F%87%B8%20AetrisVPN%20t.me%2Frjsxrd">QR-код</button>
+    <button class="btn" data-copy="vless://88281d02-b387-4fe3-918e-26ed331e6d08@95.129.234.113:8443?security=tls&amp;sni=tansy-wharf.cdn.cachefleet.com&amp;alpn=h2&amp;fp=firefox&amp;type=xhttp&amp;path=%2Fccxf5snr06b8xxb6&amp;host=is-tw-relay.cdn.cachefleet.com&amp;mode=auto#%F0%9F%87%BA%F0%9F%87%B8%20AetrisVPN%20t.me%2Frjsxrd">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="5587879437897f7a">
+  <div class="top">
+    <div class="nm">🇬🇧</div>
+    <div class="ping p-mid">364 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="5587879437897f7a" data-name="🇬🇧" data-link="vless://9cb0eaba-e1d0-49f5-b87e-1e7d380c69ee@5.104.74.5:8443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=FdZlh9FC4ay9OGnKG6K_iNqhz1I3tWDfNZhxrDYuQl8&amp;security=reality&amp;sid=7da3ba09a037e956&amp;sni=uk-room05.filesnap.tech&amp;type=tcp#🇬🇧">QR-код</button>
+    <button class="btn" data-copy="vless://9cb0eaba-e1d0-49f5-b87e-1e7d380c69ee@5.104.74.5:8443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=FdZlh9FC4ay9OGnKG6K_iNqhz1I3tWDfNZhxrDYuQl8&amp;security=reality&amp;sid=7da3ba09a037e956&amp;sni=uk-room05.filesnap.tech&amp;type=tcp#🇬🇧">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="2d70235b89a86f0e">
+  <div class="top">
+    <div class="nm">🇩🇪</div>
+    <div class="ping p-mid">380 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="2d70235b89a86f0e" data-name="🇩🇪" data-link="vless://3ceda178-78fe-4695-a1ef-a591ae7a2c97@185.255.115.58:443?encryption=none&amp;fp=firefox&amp;pbk=-Kj5RBoDmULkrxxd6qNDAfpfoPpL9DY07FRVM_TME1M&amp;security=reality&amp;sid=30eb12b1050ee52d&amp;sni=5e094at.de27.h1clayd.click&amp;type=tcp#🇩🇪">QR-код</button>
+    <button class="btn" data-copy="vless://3ceda178-78fe-4695-a1ef-a591ae7a2c97@185.255.115.58:443?encryption=none&amp;fp=firefox&amp;pbk=-Kj5RBoDmULkrxxd6qNDAfpfoPpL9DY07FRVM_TME1M&amp;security=reality&amp;sid=30eb12b1050ee52d&amp;sni=5e094at.de27.h1clayd.click&amp;type=tcp#🇩🇪">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="24ba376dcb15d477">
+  <div class="top">
+    <div class="nm">🇳🇱</div>
+    <div class="ping p-mid">383 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag">xhttp</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="24ba376dcb15d477" data-name="🇳🇱" data-link="vless://6da2c981-8c77-4340-bda3-93399b7aea26@91.84.115.36:443?encryption=none&amp;extra={&quot;xmux&quot;:{&quot;maxConcurrency&quot;:&quot;16-32&quot;,&quot;cMaxReuseTimes&quot;:&quot;0&quot;,&quot;hMaxRequestTimes&quot;:&quot;1800-3000&quot;,&quot;hMaxReusableSecs&quot;:&quot;10800-14400&quot;,&quot;hKeepAlivePeriod&quot;:0}}&amp;fp=firefox&amp;path=/v2/sync/af2c0c&amp;pbk=nalACuCZjV1sZx7QOH6yAIDio8mFI0FgVKYQvQHBKS4&amp;security=reality&amp;sid=fb3a5f2d4ca346ed&amp;sni=lectures.blog-forme.ru&amp;type=xhttp#🇳🇱">QR-код</button>
+    <button class="btn" data-copy="vless://6da2c981-8c77-4340-bda3-93399b7aea26@91.84.115.36:443?encryption=none&amp;extra={&quot;xmux&quot;:{&quot;maxConcurrency&quot;:&quot;16-32&quot;,&quot;cMaxReuseTimes&quot;:&quot;0&quot;,&quot;hMaxRequestTimes&quot;:&quot;1800-3000&quot;,&quot;hMaxReusableSecs&quot;:&quot;10800-14400&quot;,&quot;hKeepAlivePeriod&quot;:0}}&amp;fp=firefox&amp;path=/v2/sync/af2c0c&amp;pbk=nalACuCZjV1sZx7QOH6yAIDio8mFI0FgVKYQvQHBKS4&amp;security=reality&amp;sid=fb3a5f2d4ca346ed&amp;sni=lectures.blog-forme.ru&amp;type=xhttp#🇳🇱">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="b8710c95d353906a">
+  <div class="top">
+    <div class="nm">LTE/5G</div>
+    <div class="ping p-mid">395 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="b8710c95d353906a" data-name="LTE/5G" data-link="vless://4054fdc2-ee80-4419-8a8e-d937df4719e2@78.159.250.214:443?security=reality&amp;encryption=none&amp;pbk=drY21DHNOr6ezJLA2B10mzTExeJ9-gVBfTBNLwVBtWI&amp;headerType=none&amp;fp=firefox&amp;type=tcp&amp;flow=xtls-rprx-vision&amp;sni=qq.utiltools.site&amp;sid=00000000#LTE/5G">QR-код</button>
+    <button class="btn" data-copy="vless://4054fdc2-ee80-4419-8a8e-d937df4719e2@78.159.250.214:443?security=reality&amp;encryption=none&amp;pbk=drY21DHNOr6ezJLA2B10mzTExeJ9-gVBfTBNLwVBtWI&amp;headerType=none&amp;fp=firefox&amp;type=tcp&amp;flow=xtls-rprx-vision&amp;sni=qq.utiltools.site&amp;sid=00000000#LTE/5G">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="c9eaed8cb34317d4">
+  <div class="top">
+    <div class="nm">[379ms</div>
+    <div class="ping p-mid">421 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="c9eaed8cb34317d4" data-name="[379ms" data-link="vless://4054fdc2-ee80-4419-8a8e-d937df4719e2@qq.utiltools.site:443?flow=xtls-rprx-vision&amp;pbk=drY21DHNOr6ezJLA2B10mzTExeJ9-gVBfTBNLwVBtWI&amp;security=reality&amp;sni=qq.utiltools.site&amp;type=raw&amp;fp=safari#[379ms">QR-код</button>
+    <button class="btn" data-copy="vless://4054fdc2-ee80-4419-8a8e-d937df4719e2@qq.utiltools.site:443?flow=xtls-rprx-vision&amp;pbk=drY21DHNOr6ezJLA2B10mzTExeJ9-gVBfTBNLwVBtWI&amp;security=reality&amp;sni=qq.utiltools.site&amp;type=raw&amp;fp=safari#[379ms">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="c806fd5bfc22447e">
+  <div class="top">
+    <div class="nm">🇵🇱</div>
+    <div class="ping p-slow">455 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="c806fd5bfc22447e" data-name="🇵🇱" data-link="vless://dc413f44-7dce-4cc4-b2c7-878ef70ce464@217.60.33.67:8443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=-r5xcA3iTzAf63kkb0VIILrLHH1VUq550pFZ-M74Jlc&amp;security=reality&amp;sid=de&amp;sni=go-obsh-auto-drun.keno.su&amp;type=tcp#🇵🇱">QR-код</button>
+    <button class="btn" data-copy="vless://dc413f44-7dce-4cc4-b2c7-878ef70ce464@217.60.33.67:8443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=-r5xcA3iTzAf63kkb0VIILrLHH1VUq550pFZ-M74Jlc&amp;security=reality&amp;sid=de&amp;sni=go-obsh-auto-drun.keno.su&amp;type=tcp#🇵🇱">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="f9ea0b2638ea66be">
+  <div class="top">
+    <div class="nm">Бесплатный</div>
+    <div class="ping p-slow">466 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="f9ea0b2638ea66be" data-name="Бесплатный" data-link="vless://95d0e214-eab0-4701-93ed-fea4f1b56062@prime.jarbook.net:443?encryption=none&amp;flow=xtls-rprx-vision&amp;type=tcp&amp;security=reality&amp;sni=prime.jarbook.net&amp;pbk=oAX7soFKfN3xURgCD26trmjeF-e-eEjW3pBVXuuvW0k&amp;sid=77a8c8c8&amp;fp=firefox&amp;spx=/#Бесплатный">QR-код</button>
+    <button class="btn" data-copy="vless://95d0e214-eab0-4701-93ed-fea4f1b56062@prime.jarbook.net:443?encryption=none&amp;flow=xtls-rprx-vision&amp;type=tcp&amp;security=reality&amp;sni=prime.jarbook.net&amp;pbk=oAX7soFKfN3xURgCD26trmjeF-e-eEjW3pBVXuuvW0k&amp;sid=77a8c8c8&amp;fp=firefox&amp;spx=/#Бесплатный">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="fd509a95eadbb5d7">
+  <div class="top">
+    <div class="nm">[368ms</div>
+    <div class="ping p-slow">469 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="fd509a95eadbb5d7" data-name="[368ms" data-link="vless://c53ea5e9-ed8b-4990-805d-7f1d6451426c@du-rov.secureservice.top:8443?flow=xtls-rprx-vision&amp;encryption=none&amp;security=reality&amp;sni=du-rov.secureservice.top&amp;fp=chrome&amp;pbk=fSVfR9NB-6J6smrZlavi0GWd8JfDh0aXuEkKbtuFzUI&amp;sid=3cbc3d737fb9c4af&amp;type=tcp&amp;headerType=none#[368ms">QR-код</button>
+    <button class="btn" data-copy="vless://c53ea5e9-ed8b-4990-805d-7f1d6451426c@du-rov.secureservice.top:8443?flow=xtls-rprx-vision&amp;encryption=none&amp;security=reality&amp;sni=du-rov.secureservice.top&amp;fp=chrome&amp;pbk=fSVfR9NB-6J6smrZlavi0GWd8JfDh0aXuEkKbtuFzUI&amp;sid=3cbc3d737fb9c4af&amp;type=tcp&amp;headerType=none#[368ms">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="ee5228dd9f2b007c">
+  <div class="top">
+    <div class="nm">🇳🇱</div>
+    <div class="ping p-slow">519 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="ee5228dd9f2b007c" data-name="🇳🇱" data-link="vless://9d7f9398-141f-40ae-bd14-1d57bd9f2785@144.31.122.46:8443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=AFlHhfCH8dOA6FKRYH4vSLI3TS2tpCPKCM_37SaOxjk&amp;security=reality&amp;sid=3962&amp;sni=conv-nl.unit-digital.com&amp;type=tcp#🇳🇱">QR-код</button>
+    <button class="btn" data-copy="vless://9d7f9398-141f-40ae-bd14-1d57bd9f2785@144.31.122.46:8443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=AFlHhfCH8dOA6FKRYH4vSLI3TS2tpCPKCM_37SaOxjk&amp;security=reality&amp;sid=3962&amp;sni=conv-nl.unit-digital.com&amp;type=tcp#🇳🇱">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="2f1cd06d282f8377">
+  <div class="top">
+    <div class="nm">🇵🇱</div>
+    <div class="ping p-slow">523 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="2f1cd06d282f8377" data-name="🇵🇱" data-link="vless://2a66ad35-93ce-4fd2-831f-bcaa63cdac1e@217.60.33.67:8443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=-r5xcA3iTzAf63kkb0VIILrLHH1VUq550pFZ-M74Jlc&amp;security=reality&amp;sid=de&amp;sni=go-obsh-auto-drun.keno.su&amp;type=tcp#🇵🇱">QR-код</button>
+    <button class="btn" data-copy="vless://2a66ad35-93ce-4fd2-831f-bcaa63cdac1e@217.60.33.67:8443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=-r5xcA3iTzAf63kkb0VIILrLHH1VUq550pFZ-M74Jlc&amp;security=reality&amp;sid=de&amp;sni=go-obsh-auto-drun.keno.su&amp;type=tcp#🇵🇱">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="00dd2ceb9cd4c18a">
+  <div class="top">
+    <div class="nm">🇩🇪</div>
+    <div class="ping p-slow">539 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag">xhttp</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="00dd2ceb9cd4c18a" data-name="🇩🇪" data-link="vless://6da2c981-8c77-4340-bda3-93399b7aea26@178.17.52.236:2083?encryption=none&amp;extra={&quot;xmux&quot;:{&quot;maxConcurrency&quot;:&quot;16-32&quot;,&quot;cMaxReuseTimes&quot;:0,&quot;hMaxRequestTimes&quot;:&quot;1800-3000&quot;,&quot;hMaxReusableSecs&quot;:&quot;10800-14400&quot;,&quot;hKeepAlivePeriod&quot;:0}}&amp;fp=firefox&amp;path=/v2/sync/6e9367&amp;pbk=mbi4BZAuiq_L6pfhG2xxWmtosq0Z1Pzf18fvNSWKMxY&amp;security=reality&amp;sid=3258252d44113e23&amp;sni=maps.blog-forme.ru&amp;type=xhttp#🇩🇪">QR-код</button>
+    <button class="btn" data-copy="vless://6da2c981-8c77-4340-bda3-93399b7aea26@178.17.52.236:2083?encryption=none&amp;extra={&quot;xmux&quot;:{&quot;maxConcurrency&quot;:&quot;16-32&quot;,&quot;cMaxReuseTimes&quot;:0,&quot;hMaxRequestTimes&quot;:&quot;1800-3000&quot;,&quot;hMaxReusableSecs&quot;:&quot;10800-14400&quot;,&quot;hKeepAlivePeriod&quot;:0}}&amp;fp=firefox&amp;path=/v2/sync/6e9367&amp;pbk=mbi4BZAuiq_L6pfhG2xxWmtosq0Z1Pzf18fvNSWKMxY&amp;security=reality&amp;sid=3258252d44113e23&amp;sni=maps.blog-forme.ru&amp;type=xhttp#🇩🇪">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="c34c73369bb0d915">
+  <div class="top">
+    <div class="nm">Бесплатный</div>
+    <div class="ping p-slow">574 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="c34c73369bb0d915" data-name="Бесплатный" data-link="vless://e7ee38d7-f8ad-4d14-a491-2d9e18011845@cdn.izzzyvpn.space:443?encryption=none&amp;flow=xtls-rprx-vision&amp;security=reality&amp;sni=cdn.izzzyvpn.space&amp;fp=firefox&amp;pbk=v--0dXOWcnzpJvl_6qkbWTCRLg-eWdJ6WxJsYtj9WQY&amp;sid=f7fdf037537b8c38&amp;type=tcp&amp;headerType=none#Бесплатный">QR-код</button>
+    <button class="btn" data-copy="vless://e7ee38d7-f8ad-4d14-a491-2d9e18011845@cdn.izzzyvpn.space:443?encryption=none&amp;flow=xtls-rprx-vision&amp;security=reality&amp;sni=cdn.izzzyvpn.space&amp;fp=firefox&amp;pbk=v--0dXOWcnzpJvl_6qkbWTCRLg-eWdJ6WxJsYtj9WQY&amp;sid=f7fdf037537b8c38&amp;type=tcp&amp;headerType=none#Бесплатный">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="da46c265be082231">
+  <div class="top">
+    <div class="nm">🇩🇪</div>
+    <div class="ping p-slow">592 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="da46c265be082231" data-name="🇩🇪" data-link="vless://50a87e21-f0e2-4b53-a787-91adfe748f63@144.31.165.182:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=6PJlXT9xrgJP8RXfhpWDMKPh4eqGt_IZmenc_a6v0gg&amp;security=reality&amp;sni=gemsubbgem.world&amp;type=tcp#🇩🇪">QR-код</button>
+    <button class="btn" data-copy="vless://50a87e21-f0e2-4b53-a787-91adfe748f63@144.31.165.182:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=6PJlXT9xrgJP8RXfhpWDMKPh4eqGt_IZmenc_a6v0gg&amp;security=reality&amp;sni=gemsubbgem.world&amp;type=tcp#🇩🇪">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="e320ccd7f0639ed4">
+  <div class="top">
+    <div class="nm">🇩🇪</div>
+    <div class="ping p-slow">634 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="e320ccd7f0639ed4" data-name="🇩🇪" data-link="vless://5c32201a-6c0e-451b-8f0a-24b4bd40df59@5.231.45.10:8444?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=kBTMVLCNE0jjwuJF6H5-65l5Pe0QToS0Hg-9Tmaa7Sk&amp;security=reality&amp;sid=1a2b3c4d&amp;sni=www.volkswagen.de&amp;type=tcp#🇩🇪">QR-код</button>
+    <button class="btn" data-copy="vless://5c32201a-6c0e-451b-8f0a-24b4bd40df59@5.231.45.10:8444?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=kBTMVLCNE0jjwuJF6H5-65l5Pe0QToS0Hg-9Tmaa7Sk&amp;security=reality&amp;sid=1a2b3c4d&amp;sni=www.volkswagen.de&amp;type=tcp#🇩🇪">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="b31c3563b670063b">
+  <div class="top">
+    <div class="nm">🇳🇱</div>
+    <div class="ping p-slow">680 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="b31c3563b670063b" data-name="🇳🇱" data-link="vless://2232d904-8e6a-4202-8240-6efd8aec02e9@84.32.177.63:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=xNzdfy4hPv-IgM_MSn64FNQdb-UPu78pmM-GBE1HhSo&amp;security=reality&amp;sid=ef5d4ad5&amp;sni=app.betust.net&amp;type=tcp#🇳🇱">QR-код</button>
+    <button class="btn" data-copy="vless://2232d904-8e6a-4202-8240-6efd8aec02e9@84.32.177.63:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=xNzdfy4hPv-IgM_MSn64FNQdb-UPu78pmM-GBE1HhSo&amp;security=reality&amp;sid=ef5d4ad5&amp;sni=app.betust.net&amp;type=tcp#🇳🇱">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="9eedc5753ea3db62">
+  <div class="top">
+    <div class="nm">🇪🇪 AetrisVPN t.me/rjsxrd</div>
+    <div class="ping p-slow">742 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">TLS</span><span class="tag">xhttp</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="9eedc5753ea3db62" data-name="🇪🇪 AetrisVPN t.me/rjsxrd" data-link="vless://b229d38c-35ec-4a0b-9c86-8fceba243d6c@95.129.234.108:8443?security=tls&amp;sni=hazel-beacon.cdn.cachefleet.com&amp;alpn=h2&amp;fp=firefox&amp;type=xhttp&amp;path=%2Fccxf5snr06b8xxb6&amp;host=fafeqdhlett2p5la6d.cdn.cachefleet.com&amp;mode=auto#%F0%9F%87%AA%F0%9F%87%AA%20AetrisVPN%20t.me%2Frjsxrd">QR-код</button>
+    <button class="btn" data-copy="vless://b229d38c-35ec-4a0b-9c86-8fceba243d6c@95.129.234.108:8443?security=tls&amp;sni=hazel-beacon.cdn.cachefleet.com&amp;alpn=h2&amp;fp=firefox&amp;type=xhttp&amp;path=%2Fccxf5snr06b8xxb6&amp;host=fafeqdhlett2p5la6d.cdn.cachefleet.com&amp;mode=auto#%F0%9F%87%AA%F0%9F%87%AA%20AetrisVPN%20t.me%2Frjsxrd">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="4733e5286c7bd34f">
+  <div class="top">
+    <div class="nm">AetrisVPN</div>
+    <div class="ping p-slow">751 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag">xhttp</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="4733e5286c7bd34f" data-name="AetrisVPN" data-link="vless://6da2c981-8c77-4340-bda3-93399b7aea26@132.243.230.251:443?type=xhttp&amp;security=reality&amp;fp=qq&amp;pbk=Uz1UbBDf84n7oNfFIhFvXbuFcj1nbNEroiKC_Ud4ajg&amp;sid=b2f9bb426426e0e7&amp;sni=www.kinopoisk.ru&amp;path=%2Fentry-xh&amp;mode=auto&amp;encryption=none#AetrisVPN">QR-код</button>
+    <button class="btn" data-copy="vless://6da2c981-8c77-4340-bda3-93399b7aea26@132.243.230.251:443?type=xhttp&amp;security=reality&amp;fp=qq&amp;pbk=Uz1UbBDf84n7oNfFIhFvXbuFcj1nbNEroiKC_Ud4ajg&amp;sid=b2f9bb426426e0e7&amp;sni=www.kinopoisk.ru&amp;path=%2Fentry-xh&amp;mode=auto&amp;encryption=none#AetrisVPN">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="687c243952639a88">
+  <div class="top">
+    <div class="nm">🇳🇱</div>
+    <div class="ping p-slow">863 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag">xhttp</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="687c243952639a88" data-name="🇳🇱" data-link="vless://6da2c981-8c77-4340-bda3-93399b7aea26@195.63.139.79:443?encryption=none&amp;extra={&quot;xmux&quot;:{&quot;cMaxReuseTimes&quot;:&quot;0&quot;,&quot;hMaxRequestTimes&quot;:&quot;1800-3000&quot;,&quot;hMaxReusableSecs&quot;:&quot;10800-14400&quot;,&quot;maxConcurrency&quot;:&quot;16-32&quot;}}&amp;fp=firefox&amp;path=/v2/sync/af2c0c&amp;pbk=nalACuCZjV1sZx7QOH6yAIDio8mFI0FgVKYQvQHBKS4&amp;security=reality&amp;sid=fb3a5f2d4ca346ed&amp;sni=sports.blog-forme.ru&amp;type=xhttp#🇳🇱">QR-код</button>
+    <button class="btn" data-copy="vless://6da2c981-8c77-4340-bda3-93399b7aea26@195.63.139.79:443?encryption=none&amp;extra={&quot;xmux&quot;:{&quot;cMaxReuseTimes&quot;:&quot;0&quot;,&quot;hMaxRequestTimes&quot;:&quot;1800-3000&quot;,&quot;hMaxReusableSecs&quot;:&quot;10800-14400&quot;,&quot;maxConcurrency&quot;:&quot;16-32&quot;}}&amp;fp=firefox&amp;path=/v2/sync/af2c0c&amp;pbk=nalACuCZjV1sZx7QOH6yAIDio8mFI0FgVKYQvQHBKS4&amp;security=reality&amp;sid=fb3a5f2d4ca346ed&amp;sni=sports.blog-forme.ru&amp;type=xhttp#🇳🇱">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="9087f7aad1b30c4b">
+  <div class="top">
+    <div class="nm">🇷🇺 AetrisVPN t.me/rjsxrd</div>
+    <div class="ping p-slow">900 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="9087f7aad1b30c4b" data-name="🇷🇺 AetrisVPN t.me/rjsxrd" data-link="vless://3bb97d46-789b-4229-88f6-9beb222a4137@85.193.85.231:443?flow=xtls-rprx-vision&amp;security=reality&amp;sni=yoy-api.bachidze.com&amp;fp=firefox&amp;pbk=ZJlfiMh4ebjrTl2_kwAk_zXMAaCiwNS7yMd5XzlUgmI#%F0%9F%87%B7%F0%9F%87%BA%20AetrisVPN%20t.me%2Frjsxrd">QR-код</button>
+    <button class="btn" data-copy="vless://3bb97d46-789b-4229-88f6-9beb222a4137@85.193.85.231:443?flow=xtls-rprx-vision&amp;security=reality&amp;sni=yoy-api.bachidze.com&amp;fp=firefox&amp;pbk=ZJlfiMh4ebjrTl2_kwAk_zXMAaCiwNS7yMd5XzlUgmI#%F0%9F%87%B7%F0%9F%87%BA%20AetrisVPN%20t.me%2Frjsxrd">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="3eb304188488ed40">
+  <div class="top">
+    <div class="nm">🇪🇪 AetrisVPN t.me/rjsxrd</div>
+    <div class="ping p-slow">901 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">TLS</span><span class="tag">xhttp</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="3eb304188488ed40" data-name="🇪🇪 AetrisVPN t.me/rjsxrd" data-link="vless://b229d38c-35ec-4a0b-9c86-8fceba243d6c@81.17.154.181:443?security=tls&amp;sni=fafeqdhlett2p5la6d.cdn.cachefleet.com&amp;alpn=h2&amp;fp=firefox&amp;type=xhttp&amp;path=%2Fccxf5snr06b8xxb6&amp;host=fafeqdhlett2p5la6d.cdn.cachefleet.com&amp;mode=auto#%F0%9F%87%AA%F0%9F%87%AA%20AetrisVPN%20t.me%2Frjsxrd">QR-код</button>
+    <button class="btn" data-copy="vless://b229d38c-35ec-4a0b-9c86-8fceba243d6c@81.17.154.181:443?security=tls&amp;sni=fafeqdhlett2p5la6d.cdn.cachefleet.com&amp;alpn=h2&amp;fp=firefox&amp;type=xhttp&amp;path=%2Fccxf5snr06b8xxb6&amp;host=fafeqdhlett2p5la6d.cdn.cachefleet.com&amp;mode=auto#%F0%9F%87%AA%F0%9F%87%AA%20AetrisVPN%20t.me%2Frjsxrd">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="7fe8d28766d6b903">
+  <div class="top">
+    <div class="nm">🇳🇱</div>
+    <div class="ping p-slow">952 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="7fe8d28766d6b903" data-name="🇳🇱" data-link="vless://71b566cb-78c4-48e4-af5b-720e4f7884f2@191.217.217.71:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=xEDYfxVdiRkY-z7qiUvoly7fYDz4U6wI5p69oNbjWA4&amp;security=reality&amp;sid=f9d991431c87703c&amp;sni=vdsin.xvanta.online&amp;type=tcp#🇳🇱">QR-код</button>
+    <button class="btn" data-copy="vless://71b566cb-78c4-48e4-af5b-720e4f7884f2@191.217.217.71:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=xEDYfxVdiRkY-z7qiUvoly7fYDz4U6wI5p69oNbjWA4&amp;security=reality&amp;sid=f9d991431c87703c&amp;sni=vdsin.xvanta.online&amp;type=tcp#🇳🇱">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="48d5d9c0a0fe9602">
+  <div class="top">
+    <div class="nm">🇳🇱</div>
+    <div class="ping p-slow">972 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">ГРИБИ</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="48d5d9c0a0fe9602" data-name="🇳🇱" data-link="vless://2232d904-8e6a-4202-8240-6efd8aec02e9@195.189.98.197:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=92lzqaBZnD5IP_subNDLotGMBs4u7STDMhqoBz1OADE&amp;security=reality&amp;sid=b7a5c406&amp;sni=api37.betust.net&amp;type=tcp#🇳🇱">QR-код</button>
+    <button class="btn" data-copy="vless://2232d904-8e6a-4202-8240-6efd8aec02e9@195.189.98.197:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=92lzqaBZnD5IP_subNDLotGMBs4u7STDMhqoBz1OADE&amp;security=reality&amp;sid=b7a5c406&amp;sni=api37.betust.net&amp;type=tcp#🇳🇱">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vless" data-up="1.00" data-id="ccd05ca3543cd550">
+  <div class="top">
+    <div class="nm">🇺🇸</div>
+    <div class="ping p-slow">1006 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VLESS</span><span class="tag">REALITY</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="ccd05ca3543cd550" data-name="🇺🇸" data-link="vless://5c32201a-6c0e-451b-8f0a-24b4bd40df59@209.141.49.243:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=kBTMVLCNE0jjwuJF6H5-65l5Pe0QToS0Hg-9Tmaa7Sk&amp;security=reality&amp;sid=1a2b3c4d&amp;sni=www.porsche.com&amp;type=tcp#🇺🇸">QR-код</button>
+    <button class="btn" data-copy="vless://5c32201a-6c0e-451b-8f0a-24b4bd40df59@209.141.49.243:443?encryption=none&amp;flow=xtls-rprx-vision&amp;fp=firefox&amp;pbk=kBTMVLCNE0jjwuJF6H5-65l5Pe0QToS0Hg-9Tmaa7Sk&amp;security=reality&amp;sid=1a2b3c4d&amp;sni=www.porsche.com&amp;type=tcp#🇺🇸">Копировать</button>
+  </div>
+</article><article class="card" data-kind="vmess" data-up="1.00" data-id="12a8f1c5012d3d1f">
+  <div class="top">
+    <div class="nm">[OpenRay] 🌐XX-212</div>
+    <div class="ping p-slow">1008 мс</div>
+  </div>
+  <div class="tags"><span class="tag">VMESS</span><span class="tag">TLS</span><span class="tag">ws</span><span class="tag good">100% аптайм</span><span class="tag">bypass-2</span></div>
+  <div class="acts">
+    <button class="btn primary" data-qr="12a8f1c5012d3d1f" data-name="[OpenRay] 🌐XX-212" data-link="vmess://eyJhZGQiOiJ3d3cudWJ1bnR1dXBkYXRlcy5jb20iLCJhaWQiOjAsImhvc3QiOiIiLCJpZCI6IjgzYjA5YTY0LTFlYWYtNGM0ZC04OWVkLTg2NmQ0YjZiODExNSIsIm5ldCI6IndzIiwicGF0aCI6Ii90cnV0aCIsInBvcnQiOiI0NDMiLCJwcyI6IltPcGVuUmF5XSDwn4yQWFgtMjEyIiwic25pIjoid3d3LnVidW50dXVwZGF0ZXMuY29tIiwidGxzIjoidGxzIiwidHlwZSI6Im5vbmUiLCJ2IjoiMiJ9#Бесплатный">QR-код</button>
+    <button class="btn" data-copy="vmess://eyJhZGQiOiJ3d3cudWJ1bnR1dXBkYXRlcy5jb20iLCJhaWQiOjAsImhvc3QiOiIiLCJpZCI6IjgzYjA5YTY0LTFlYWYtNGM0ZC04OWVkLTg2NmQ0YjZiODExNSIsIm5ldCI6IndzIiwicGF0aCI6Ii90cnV0aCIsInBvcnQiOiI0NDMiLCJwcyI6IltPcGVuUmF5XSDwn4yQWFgtMjEyIiwic25pIjoid3d3LnVidW50dXVwZGF0ZXMuY29tIiwidGxzIjoidGxzIiwidHlwZSI6Im5vbmUiLCJ2IjoiMiJ9#Бесплатный">Копировать</button>
+  </div>
+</article></div>
+<div class="none" id="none">В этой категории пока нет серверов</div>
+<div class="subblock"><h2>Подписка — серверы обновляются сами</h2><p>Вставьте эту ссылку в клиент (v2rayNG: «Подписки» → «＋» → вставить URL) или отсканируйте QR — клиент будет сам подтягивать свежий список серверов.</p><div class="url">http://127.0.0.1:8098/demo/sub.txt</div><div class="subrow"><img src="qr/sub.svg" alt="QR подписки"><div style="flex:1"><button class="btn primary" data-copy="http://127.0.0.1:8098/demo/sub.txt">Копировать ссылку</button></div></div></div>
+</main>
+<footer>
+  Проверка: реальный запрос через сервер каждые 20 мин. Сервер попадает в список,
+  только если через него прошёл трафик.<br>
+  Страница обновляется автоматически, ссылки живут до следующей проверки.
+</footer>
+<div class="ovl" id="ovl">
+  <div class="ovl-box">
+    <div class="ovl-head">
+      <div>
+        <div class="ovl-title">QR-код подключения</div>
+        <div class="nm" id="ovl-name"></div>
+      </div>
+      <button id="ovl-x" aria-label="Закрыть">×</button>
+    </div>
+    <div class="qrwrap"><img id="ovl-qr" alt="QR-код подключения"></div>
+    <div class="ovl-tip">Наведите камеру телефона или откройте в клиенте
+      «＋» → «Сканировать QR-код»</div>
+    <div class="ovl-lnk" id="ovl-link" title="Нажмите, чтобы развернуть ссылку"></div>
+    <div class="urlhint" id="ovl-more">Показать ссылку полностью</div>
+    <div class="acts">
+      <button class="btn primary" id="ovl-copy">Скопировать ссылку</button>
+      <a class="btn" id="ovl-dl" download="qr.svg">Скачать QR</a>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var REFRESH = 180;
+  var ovl = document.getElementById('ovl');
+  var qrImg = document.getElementById('ovl-qr');
+  var linkEl = document.getElementById('ovl-link');
+  var nameEl = document.getElementById('ovl-name');
+  var dl = document.getElementById('ovl-dl');
+  var cur = '';
+  function copyText(t){
+    if (navigator.clipboard && window.isSecureContext) { return navigator.clipboard.writeText(t); }
+    return new Promise(function(res, rej){
+      var ta = document.createElement('textarea');
+      ta.value = t; ta.setAttribute('readonly','');
+      ta.style.position = 'fixed'; ta.style.top = '-1000px';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); res(); } catch(e){ rej(e); }
+      document.body.removeChild(ta);
+    });
+  }
+  function flash(btn, txt){
+    if (!btn) { return; }
+    var old = btn.textContent;
+    btn.textContent = txt; btn.disabled = true;
+    setTimeout(function(){ btn.textContent = old; btn.disabled = false; }, 1300);
+  }
+  function openQr(id, name, link){
+    cur = link; nameEl.textContent = name;
+    qrImg.src = 'qr/' + id + '.svg';
+    dl.href = 'qr/' + id + '.svg';
+    linkEl.textContent = link;
+    linkEl.classList.remove('open');
+    document.getElementById('ovl-more').textContent = 'Показать ссылку полностью';
+    ovl.classList.add('show');
+  }
+  function closeQr(){ ovl.classList.remove('show'); }
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (t.id === 'ovl-link' || t.id === 'ovl-more') {
+      var opened = linkEl.classList.toggle('open');
+      document.getElementById('ovl-more').textContent =
+        opened ? 'Скрыть' : 'Показать ссылку полностью';
+      return;
+    }
+    var b = t.closest ? t.closest('[data-qr]') : null;
+    if (b) { openQr(b.getAttribute('data-qr'), b.getAttribute('data-name'),
+                    b.getAttribute('data-link')); return; }
+    var c = t.closest ? t.closest('[data-copy]') : null;
+    if (c) {
+      var val = c.getAttribute('data-copy');
+      copyText(val).then(function(){ flash(c, 'Скопировано'); })
+                   .catch(function(){ flash(c, 'Ошибка'); });
+      return;
+    }
+    if (t.id === 'ovl' || t.id === 'ovl-x') { closeQr(); return; }
+    var f = t.closest ? t.closest('[data-filter]') : null;
+    if (f) { setFilter(f.getAttribute('data-filter')); }
+  });
+  document.getElementById('ovl-copy').addEventListener('click', function(){
+    var b = this;
+    copyText(cur).then(function(){ flash(b, 'Скопировано'); }).catch(function(){ flash(b,'Ошибка'); });
+  });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') { closeQr(); } });
+  function setFilter(f){
+    var chips = document.querySelectorAll('[data-filter]');
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].classList.toggle('on', chips[i].getAttribute('data-filter') === f);
+    }
+    var cards = document.querySelectorAll('.card');
+    var shown = 0;
+    for (var j = 0; j < cards.length; j++) {
+      var card = cards[j];
+      var up = parseFloat(card.getAttribute('data-up') || '0');
+      var ok = (f === 'all') || (f === 'stable' ? up >= 0.8 : card.getAttribute('data-kind') === f);
+      card.style.display = ok ? '' : 'none';
+      if (ok) { shown++; }
+    }
+    document.getElementById('none').style.display = shown ? 'none' : 'block';
+  }
+  function tick(){
+    var els = document.querySelectorAll('[data-ts]');
+    for (var i = 0; i < els.length; i++) {
+      var ts = parseInt(els[i].getAttribute('data-ts'), 10) * 1000;
+      if (!ts) { continue; }
+      var m = Math.round((Date.now() - ts) / 60000);
+      els[i].textContent = m < 1 ? 'только что' : (m < 60 ? m + ' мин назад'
+                                   : (m < 1440 ? Math.round(m / 60) + ' ч назад'
+                                   : Math.round(m / 1440) + ' дн назад'));
+    }
+  }
+  tick(); setInterval(tick, 30000);
+  if (REFRESH > 0) {
+    setTimeout(function(){ if (!ovl.classList.contains('show')) { location.reload(); } },
+               REFRESH * 1000);
+  }
+})();
+</script>
+</body></html>
