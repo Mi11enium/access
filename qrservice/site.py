@@ -342,6 +342,8 @@ def build_site(nodes: list[dict], state: dict, cfg: dict, out_root: Path,
             tags.append(f'<span class="tag">{n["security"].upper()}</span>')
         if n.get("network") and n["network"] != "raw":
             tags.append(f'<span class="tag">{n["network"]}</span>')
+        if n.get("age"):
+            tags.append(f'<span class="tag age">проверен {n["age"]} мин назад</span>')
         if stale:
             tags.append('<span class="tag stale">не проверен сейчас</span>')
         elif n["uptime"] >= 0.8:

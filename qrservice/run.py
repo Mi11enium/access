@@ -127,6 +127,41 @@ def fallback_nodes(state: dict, hours: float = 6.0) -> list[dict]:
     return out
 
 
+def merge_public(measured: list, failed_now: set, state: dict, now: float,
+                 fresh_minutes: float) -> list[dict]:
+    """Карточки: живые сейчас + те, что работали недавно (с пометкой «проверен N мин назад»).
+
+    `failed_now` — узлы, которые в этой проверке реально не ответили (закрытый порт
+    или проваленный запрос). Такие не показываем, даже если они были живы 10 минут
+    назад. Узлы, которые просто не попали в проверку, остаются в списке с возрастом.
+    """
+    current: dict[str, dict] = {}
+    for n in measured:
+        if not n.ok:
+            continue
+        item = n.to_public()
+        item["security"] = {"tls": "TLS", "reality": "Reality"}.get(n.security, "")
+        item["network"] = n.network
+        item["age"] = 0
+        current[n.ident] = item
+
+    out = list(current.values())
+    horizon = now - fresh_minutes * 60
+    for ident, st in (state.get("nodes") or {}).items():
+        if ident in current or ident in failed_now:
+            continue
+        last_ok = float(st.get("last_ok") or 0)
+        if last_ok < horizon or not st.get("link"):
+            continue
+        out.append({
+            "id": ident, "kind": st.get("kind") or "vless",
+            "name": st.get("name") or ident, "ping": st.get("ping") or 0,
+            "link": st["link"], "source": st.get("source") or "",
+            "security": "", "network": "", "age": int((now - last_ok) / 60),
+        })
+    return out
+
+
 def origin_text(cfg: dict) -> str:
     if os.environ.get("GITHUB_ACTIONS"):
         return "Проверено из GitHub Actions (зарубежный дата-центр)"
@@ -189,11 +224,12 @@ def main(argv: list[str] | None = None) -> int:
         print("[fail] ни одной конфигурации из подписок — публикую прошлое состояние", file=sys.stderr)
 
     probe_cfg = cfg.get("probe", {}) or {}
-    tcp_alive = subs.prefilter(unique,
-                               timeout=float(probe_cfg.get("tcp_timeout", 3)),
-                               workers=int(probe_cfg.get("tcp_workers", 200)))
-    if args.limit:
-        tcp_alive = tcp_alive[: args.limit]
+    tcp_seen = subs.prefilter(unique,
+                              timeout=float(probe_cfg.get("tcp_timeout", 3)),
+                              workers=int(probe_cfg.get("tcp_workers", 200)))
+    # Отсеянные TCP-фильтром — это реальный отказ (порт закрыт), а не «не проверено».
+    closed_ports = {n.ident for n in unique} - {n.ident for n in tcp_seen}
+    tcp_alive = tcp_seen[: args.limit] if args.limit else tcp_seen
     print(f"[start] после TCP-фильтра: {len(tcp_alive)}", flush=True)
 
     probe.measure(tcp_alive, probe_cfg, exe)
@@ -204,16 +240,15 @@ def main(argv: list[str] | None = None) -> int:
     state = load_state(out_root, slug, pages_url)
     state = update_state(state, tcp_alive, now)
 
-    alive = sorted([n for n in tcp_alive if n.ok], key=lambda n: n.ping_ms)
-    public = [n.to_public() for n in alive]
-    for n in public:
-        src = next((x for x in tcp_alive if x.ident == n["id"]), None)
-        if src is not None:
-            n["security"] = {"tls": "TLS", "reality": "Reality"}.get(src.security, "")
-            n["network"] = src.network
+    max_nodes = int(site_cfg.get("max_nodes", 40))
+    # Список = живые сейчас + те, что работали недавно и в этой проверке просто не
+    # участвовали. Иначе одна неудачная проверка стирает половину списка, а при двух
+    # источниках замера (ПК и GitHub) страница дёргается между двумя картинами.
+    fresh_minutes = float(site_cfg.get("keep_fresh_minutes", 45))
+    failed_now = closed_ports | {n.ident for n in tcp_alive if not n.ok}
+    public = merge_public(tcp_alive, failed_now, state, now, fresh_minutes)
 
     stale = False
-    max_nodes = int(site_cfg.get("max_nodes", 40))
     if not public:
         public = fallback_nodes(state)[:max_nodes]
         stale = bool(public)
