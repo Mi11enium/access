@@ -61,15 +61,22 @@ schtasks /Create /TN "proxy-qr refresh" /SC MINUTE /MO 20 ^
 
 ## Облачный крон (работает при выключенном ПК)
 
-### GitLab CI (настроено, квота — 400 минут в месяц)
+### CircleCI (рекомендуемый путь)
 
-`.gitlab-ci.yml` в корне: один джоб, `--limit 160`, без замера скорости (~2 минуты),
-расписание **раз в 6 часов**. Почему не чаще: Free-тариф GitLab даёт 400 compute-минут
-в месяц, скидка ×0.5 бывает только у проектов в программе GitLab for Open Source.
-4 запуска в сутки ≈ 250 минут — влезает; каждые 20 минут квота кончилась бы за двое суток.
+`.circleci/config.yml`: один джоб на `cimg/python:3.12`, `--limit 160`, без замера
+скорости (~2–3 минуты), расписание каждые 20 минут. Регистрация через GitHub, карта не
+нужна; для публичных репозиториев бесплатный лимит покрывает такой темп с запасом
+(400 000 кредитов ≈ 80 000 минут в месяц для open source).
 
-Переменные задаются в проекте (Settings → CI/CD → Variables): `GITHUB_TOKEN` (masked),
-`PUBLISH_REPO`, `PAGES_URL`, `SITE_SLUG`, `CHECK_LIMIT`.
+Переменные проекта (Project Settings → Environment Variables): `GITHUB_TOKEN`
+(право `repo`), `PUBLISH_REPO`, `PAGES_URL`, `SITE_SLUG`, `CHECK_LIMIT`, `PUBLISH`.
+
+### GitLab CI (готов, но требует подтверждения личности)
+
+`.gitlab-ci.yml`: джоб на 2 минуты, расписание раз в 6 часов (Free = 400 compute-минут
+в месяц, чаще нельзя). Проект, переменные и расписание создаются, но запуск пайплайна
+GitLab блокирует: `Identity verification is required in order to run CI jobs` — новым
+бесплатным аккаунтам нужно подтверждение (обычно карта).
 
 ### GitHub Actions (готов, но заблокирован биллингом аккаунта)
 

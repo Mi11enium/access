@@ -1,0 +1,50 @@
+# CircleCI: проверка серверов каждые 20 минут.
+#
+# Почему CircleCI: GitHub Actions заблокирован биллингом аккаунта, GitLab требует
+# подтверждения личности (карту). CircleCI для публичных репозиториев даёт
+# 400 000 кредитов в месяц (~80 000 минут), карта при регистрации не нужна.
+#
+# Переменные проекта (Project Settings → Environment Variables):
+#   GITHUB_TOKEN  — токен с правом repo (для публикации на GitHub Pages)
+#   PUBLISH_REPO  — Mi11enium/access
+#   PAGES_URL     — https://mi11enium.github.io/access
+#   SITE_SLUG     — адрес страницы (неугадываемый)
+#   CHECK_LIMIT   — сколько нод проверять за прогон (по умолчанию 160)
+
+version: 2.1
+
+jobs:
+  refresh:
+    docker:
+      - image: cimg/python:3.12
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Зависимости
+          command: |
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq --no-install-recommends curl unzip >/dev/null
+            pip install --quiet --no-cache-dir -r requirements.txt
+      - run:
+          name: Ядро Xray
+          command: |
+            curl -sSL -o xray.zip https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
+            mkdir -p bin && unzip -qo xray.zip -d bin && chmod +x bin/xray
+            ./bin/xray version | head -2
+      - run:
+          name: Проверка серверов и публикация
+          no_output_timeout: 10m
+          command: |
+            export XRAY_BIN="$PWD/bin/xray"
+            export PUBLISH=1
+            python -m qrservice.run --config config.json --out dist --publish \
+              --no-speed --limit "${CHECK_LIMIT:-160}"
+      - store_artifacts:
+          path: dist
+          destination: site
+
+workflows:
+  refresh:
+    jobs:
+      - refresh
