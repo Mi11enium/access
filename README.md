@@ -59,18 +59,24 @@ schtasks /Create /TN "proxy-qr refresh" /SC MINUTE /MO 20 ^
 телефон. Минус: пока ПК выключен, страница показывает последние результаты (в шапке
 видно «обновлено N ч назад»).
 
-### Если нужен облачный крон (работает при выключенном ПК)
+## Облачный крон (работает при выключенном ПК)
 
-Файл workflow лежит в `ci/refresh.workflow.yml`, но залить его автоматически не дал
-токен: у OAuth-токена нет scope `workflow` (GitHub отказывает в записи
-`.github/workflows/*`). Добавляется один раз вручную, 30 секунд:
+### GitLab CI (настроено, квота — 400 минут в месяц)
 
-1. В репозитории: **Add file → Create new file**, имя `.github/workflows/refresh.yml`.
-2. Скопировать туда содержимое `ci/refresh.workflow.yml`, **Commit**.
-3. **Actions → refresh → Run workflow**.
+`.gitlab-ci.yml` в корне: один джоб, `--limit 160`, без замера скорости (~2 минуты),
+расписание **раз в 6 часов**. Почему не чаще: Free-тариф GitLab даёт 400 compute-минут
+в месяц, скидка ×0.5 бывает только у проектов в программе GitLab for Open Source.
+4 запуска в сутки ≈ 250 минут — влезает; каждые 20 минут квота кончилась бы за двое суток.
 
-После этого проверка и публикация идут с GitHub каждые 20 минут независимо от ПК.
-Секрет `SITE_SLUG` и права Actions (`Read and write`) уже настроены.
+Переменные задаются в проекте (Settings → CI/CD → Variables): `GITHUB_TOKEN` (masked),
+`PUBLISH_REPO`, `PAGES_URL`, `SITE_SLUG`, `CHECK_LIMIT`.
+
+### GitHub Actions (готов, но заблокирован биллингом аккаунта)
+
+Файл лежит в `ci/refresh.workflow.yml`, в репозитории — `.github/workflows/refresh.yml`.
+Запуск падает с `The job was not started because your account is locked due to a billing
+issue` — это блокировка аккаунта GitHub, а не ошибка пайплайна. Пока не исправлено,
+workflow выключен (`Actions → refresh → Enable workflow` после оплаты).
 
 ## Быстрый старт с нуля (другой аккаунт)
 
