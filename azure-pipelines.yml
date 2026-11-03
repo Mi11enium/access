@@ -1,0 +1,53 @@
+# Azure Pipelines: проверка серверов каждые 20 минут.
+#
+# Почему: dev.azure.com открывается из РФ напрямую, а для публичных проектов
+# Azure Pipelines даёт 1 бесплатный параллельный джоб с неограниченными минутами
+# (Azure DevOps Pricing: «1 free parallel job with unlimited minutes»).
+#
+# Переменные пайплайна (Pipelines → Library / Edit → Variables, можно secret):
+#   GITHUB_TOKEN, PUBLISH_REPO, PAGES_URL, SITE_SLUG, CHECK_LIMIT
+
+trigger: none
+pr: none
+
+schedules:
+  - cron: "7,27,47 * * * *"
+    displayName: проверка серверов каждые 20 минут
+    branches:
+      include:
+        - main
+    always: true
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+
+  - bash: |
+      set -e
+      sudo apt-get update -qq
+      sudo apt-get install -y -qq --no-install-recommends unzip curl
+      pip install --quiet --no-cache-dir -r requirements.txt
+      curl -sSL -o xray.zip https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
+      mkdir -p bin && unzip -qo xray.zip -d bin && chmod +x bin/xray
+      ./bin/xray version | head -2
+    displayName: Зависимости и ядро Xray
+
+  - bash: |
+      set -e
+      export XRAY_BIN="$PWD/bin/xray"
+      export PUBLISH=1
+      python -m qrservice.run --config config.json --out dist --publish \
+        --no-speed --limit "${CHECK_LIMIT:-160}"
+    displayName: Проверка серверов и публикация
+    env:
+      GITHUB_TOKEN: $(GITHUB_TOKEN)
+      PUBLISH_REPO: $(PUBLISH_REPO)
+      PAGES_URL: $(PAGES_URL)
+      SITE_SLUG: $(SITE_SLUG)
+      CHECK_LIMIT: $(CHECK_LIMIT)
+
+  - publish: dist
+    artifact: site
+    condition: always()
