@@ -1,0 +1,60 @@
+{
+  "xray": "",
+  "subscriptions": [
+    {
+      "url": "https://raw.githubusercontent.com/histeenn/VLESS-PO-GRIBI/main/deploy/sub.txt",
+      "name": "ГРИБИ",
+      "enabled": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/WHITE-CIDR-RU-checked.txt",
+      "name": "WHITE-RU",
+      "enabled": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/main/Vless-Reality-White-Lists-Rus-Mobile.txt",
+      "name": "Reality-RU",
+      "enabled": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/whoahaow/rjsxrd/main/githubmirror/bypass/bypass-2.txt",
+      "name": "bypass-2",
+      "enabled": true
+    }
+  ],
+  "fetch": {
+    "timeout": 25,
+    "attempts": 2,
+    "max_per_sub": 400
+  },
+  "probe": {
+    "kinds": ["vless", "vmess", "trojan"],
+    "tcp_timeout": 3,
+    "tcp_workers": 200,
+    "batch": 48,
+    "lanes": 2,
+    "port_base": 23100,
+    "port_span": 4096,
+    "workers": 48,
+    "ping_timeout": 7,
+    "ping_urls": [
+      "https://www.gstatic.com/generate_204",
+      "https://cp.cloudflare.com/generate_204"
+    ],
+    "speed_top": 6,
+    "speed_timeout": 12,
+    "speed_url": "https://speed.cloudflare.com/__down?bytes=1500000"
+  },
+  "site": {
+    "title": "Рабочие серверы",
+    "slug": "",
+    "max_nodes": 40,
+    "refresh_seconds": 180,
+    "refresh_minutes": 20
+  },
+  "publish": {
+    "repo": "",
+    "branch": "gh-pages",
+    "pages_url": ""
+  }
+}

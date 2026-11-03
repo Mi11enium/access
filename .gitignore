@@ -1,0 +1,9 @@
+dist/
+dist_test/
+tests/_out/
+.venv/
+bin/xray
+bin/xray.exe
+__pycache__/
+*.pyc
+.env
