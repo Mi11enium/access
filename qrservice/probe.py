@@ -118,10 +118,36 @@ def _run_chunk(nodes: list[Node], base: int, span: int, exe: str,
     return alive, len(nodes)
 
 
+def kill_orphans() -> int:
+    """Снимает ядра Xray, оставшиеся от прерванных прогонов.
+
+    На Windows дочерний процесс переживает аварийное завершение python: если ПК
+    выключили во время проверки, остаются висеть xray.exe с нашим временным
+    конфигом (`xray-XXXX.json` в %TEMP%). Они держат память и порты, а следующий
+    прогон рискует не поднять батч. Чужие ядра (v2rayN-Auto) не трогаем — у них
+    конфиги в другой папке.
+    """
+    if os.name != "nt":
+        return 0
+    ps = ("Get-CimInstance Win32_Process -Filter \"Name='xray.exe'\" | "
+          "Where-Object { $_.CommandLine -like '*xray-*.json*' } | "
+          "ForEach-Object { Stop-Process -Id $_.ProcessId -Force; $_.ProcessId }")
+    try:
+        out = subprocess.run(["powershell", "-NoProfile", "-Command", ps],
+                             capture_output=True, text=True, timeout=90)
+    except Exception:                          # noqa: BLE001
+        return 0
+    killed = len([t for t in (out.stdout or "").split() if t.isdigit()])
+    if killed:
+        print(f"[probe] снял осиротевших ядер: {killed}", flush=True)
+    return killed
+
+
 def measure(nodes: list[Node], cfg: dict, exe: str) -> int:
     """Прогоняет все ноды батчами (в несколько полос). Возвращает число живых."""
     if not nodes:
         return 0
+    kill_orphans()
     batch = max(1, int(cfg.get("batch", 48)))
     lanes = max(1, int(cfg.get("lanes", 1)))
     base = int(cfg.get("port_base", 23100))

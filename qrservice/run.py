@@ -8,11 +8,13 @@
 from __future__ import annotations
 
 import argparse
+import atexit
 import json
 import os
 import platform
 import re
 import secrets
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -21,6 +23,52 @@ from . import core, probe, site, subs
 
 ROOT = Path(__file__).resolve().parent.parent
 STATE_KEEP_DAYS = 7
+LOCK = ROOT / "logs" / "refresh.lock"
+
+
+def _pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    if os.name == "nt":
+        res = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/NH"],
+                             capture_output=True, text=True, timeout=30)
+        return str(pid) in (res.stdout or "")
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+def acquire_lock() -> bool:
+    """Один прогон за раз.
+
+    Два одновременных прогона делят порты тестового диапазона и оба делают
+    force-push в gh-pages: второй затирает результат первого. Планировщик это не
+    гарантирует (StartWhenAvailable может запустить «догоняющий» прогон поверх
+    текущего), поэтому блокировка нужна в самом коде.
+    """
+    LOCK.parent.mkdir(parents=True, exist_ok=True)
+    if LOCK.exists():
+        try:
+            pid = int((LOCK.read_text("utf-8", errors="ignore") or "0").strip())
+        except ValueError:
+            pid = 0
+        if _pid_alive(pid) and pid != os.getpid():
+            print(f"[lock] уже идёт прогон (pid={pid}) — выходим", flush=True)
+            return False
+        print("[lock] найден протухший лок — перехватываю", flush=True)
+    LOCK.write_text(str(os.getpid()), encoding="utf-8")
+    atexit.register(release_lock)
+    return True
+
+
+def release_lock() -> None:
+    try:
+        if LOCK.exists() and LOCK.read_text("utf-8", errors="ignore").strip() == str(os.getpid()):
+            LOCK.unlink()
+    except OSError:
+        pass
 
 
 def load_cfg(path: Path) -> dict:
@@ -195,6 +243,8 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     _load_dotenv()
+    if not acquire_lock():
+        return 0
     cfg = env_overrides(load_cfg(Path(args.config)))
     out_root = Path(args.out)
     site_cfg = cfg.get("site", {}) or {}
@@ -220,8 +270,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     unique = subs.pull(raw_nodes, (cfg.get("probe") or {}).get("kinds"))
     print(f"[start] ссылок {len(raw_nodes)}, уникальных рабочих конфигураций {len(unique)}", flush=True)
-    if not unique:
-        print("[fail] ни одной конфигурации из подписок — публикую прошлое состояние", file=sys.stderr)
+    if not raw_nodes:
+        # Ни одной ссылки — почти всегда значит «нет сети» после включения ПК.
+        # Публиковать в этом случае нельзя: хорошая страница превратится в «0 серверов».
+        print("[fail] подписки не отдали ни одной ссылки (нет сети?) — страницу не трогаю",
+              file=sys.stderr)
+        return 4
 
     probe_cfg = cfg.get("probe", {}) or {}
     tcp_seen = subs.prefilter(unique,

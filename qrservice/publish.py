@@ -6,6 +6,7 @@ Windows-машине без установленного gh.
 """
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -28,7 +29,13 @@ def _remote(repo: str, token: str) -> str:
 
 
 def _run(args: list[str], cwd: Path) -> tuple[int, str]:
-    res = subprocess.run(args, cwd=str(cwd), capture_output=True, text=True, timeout=180)
+    # Без интерактива: git не должен ждать ввода пароля в фоновой задаче —
+    # такой «висящий» прогон планировщик считает работающим до лимита времени.
+    env = dict(os.environ)
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    env["GCM_INTERACTIVE"] = "never"
+    res = subprocess.run(args, cwd=str(cwd), capture_output=True, text=True,
+                         timeout=180, env=env)
     out = (res.stdout or "") + (res.stderr or "")
     return res.returncode, out.strip()
 
